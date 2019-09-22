@@ -1,0 +1,19 @@
+#alertmanager configuration
+https://www.youtube.com/watch?v=GiaYg19-OTM
+https://github.com/vipin-k/Prometheus-Tutorial/blob/master/Alert-Manager/alertmanager.yml
+
+
+#enable web api in prometheus 
+nohup prometheus --log.level=debug --web.listen-address="localhost:9854"  --web.enable-admin-api &
+
+
+yum install epel-release -y
+yum install jq -y
+
+
+#delete all prometheus series
+curl --silent -H "Content-Type: application/json" -X POST -d '{"matchers":[{"type":"EQ","name":"__name__","value":"up"}]}' 'http://localhost:9865/prometheus/api/v2/admin/tsdb/delete_series'|jq .
+
+#set timezone
+timedatectl list-timezones | grep Asia
+timedatectl set-timezone Asia/Karachi
