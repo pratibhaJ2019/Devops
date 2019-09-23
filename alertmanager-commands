@@ -17,3 +17,7 @@ curl --silent -H "Content-Type: application/json" -X POST -d '{"matchers":[{"typ
 #set timezone
 timedatectl list-timezones | grep Asia
 timedatectl set-timezone Asia/Karachi
+
+
+#graph command in prometheus (showing total cpu usage per/min) 
+rate(node_cpu_seconds_total{mode='system'}[1m])
