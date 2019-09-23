@@ -1,0 +1,27 @@
+#check the current timezone for ubuntu 18
+ll /etc/localtimezone
+
+#set the current timezone 
+timedatectl set-timezone Asia/Karachi
+
+
+
+
+#check the current timezone for centos 7
+cat /etc/timezone
+
+#set the current timezone 
+timedatectl set-timezone Asia/Karachi
+
+
+-----------------------------------------------
+##getting all timezone list and to a file
+timedatectl list-timezones >> list
+
+#converting the timezone in a script format
+cat list |awk '{print "TZ=" $1 " date"}' >> timezone
+
+# execute the script
+chmod +x timezone
+
+./timezone
