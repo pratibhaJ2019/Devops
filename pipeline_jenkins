@@ -1,0 +1,93 @@
+def remote_dev = [:]
+def remote_qa = [:]
+
+remote_dev.name = 'ubuntu'
+remote_dev.user = 'frt'
+remote_dev.password= '!frt_'
+remote_dev.allowAnyHosts = true  
+remote_dev.host = '192.168.3.239'
+
+
+remote_qa.port=9003
+remote_qa.name= 'ubuntu'
+remote_qa.user = 'frt'
+remote_qa.host = '192.168.3.187'
+remote_qa.password= '!frt_'
+remote_qa.allowAnyHosts = true  
+
+
+// Using git without checkout
+pipeline {
+
+ environment {
+  registry = "192.168.3.170:5001/data-prep"
+ }
+  agent any
+  parameters {
+    gitParameter branchFilter: 'origin/(.*)', defaultValue: 'master', name: 'BRANCH', type: 'PT_BRANCH'
+  }
+ stages {
+  stage('Check out') {
+   steps {
+    echo "****************Check Out***************"
+    git branch: "${params.BRANCH}", credentialsId: '07e45127-f39a-4c8f-a2ad-96ab35a8a1f6', url: 'https://marsalanmudni@bitbucket.org/sparkcognition/dataprep_api.git'
+
+
+    echo "${params.BRANCH}"
+    checkout changelog: false, poll: false, scm: [$class: 'GitSCM', branches: [
+     [name: "*/${params.BRANCH}"]
+    ], browser: [$class: 'BitbucketWeb', repoUrl: ''], doGenerateSubmoduleConfigurations: false, extensions: [
+     [$class: 'RelativeTargetDirectory', relativeTargetDir: '/u/projects/dataprep/']
+    ], submoduleCfg: [], userRemoteConfigs: [
+     [credentialsId: '07e45127-f39a-4c8f-a2ad-96ab35a8a1f6', url: 'https://marsalanmudni@bitbucket.org/sparkcognition/dataprep_api.git']
+    ]]
+    script {
+    sh "chmod 777 /u/projects/dataprep/entrypoint.sh"   
+    if ("${params.Deploy_On}" == "QA") {
+        sh "cp -f /u/projects/dataprep_configs/QA/settings.py /u/projects/dataprep/dataprep_api/settings.py"   
+    }
+    if ("${params.Deploy_On}" == "DEV") {
+        sh "cp -f /u/projects/dataprep_configs/DEV/settings.py /u/projects/dataprep/dataprep_api/settings.py"   
+    }
+    }
+   }
+  }
+
+  stage('Build') {
+   steps {
+    echo "****************Build***************"
+    script {
+     customImage = docker.build(registry + ":$BUILD_NUMBER", "/u/projects/dataprep")
+    }
+    sh "docker push ${registry}:$BUILD_NUMBER"
+    sh "docker rmi $registry:$BUILD_NUMBER"
+   }
+  }
+
+
+  stage('Test') {
+   steps {
+    echo "****************Test***************"
+
+   }
+  }
+
+
+  stage('Deploy') {
+   steps {
+    echo "****************Deploy***************"
+    script {
+     if ("${params.Deploy_On}" == "DEV") {
+      sshPut remote: remote_dev, from: '/u/startup/scripts/start_dataprep.sh', into: '/u/startup/scripts'
+      sshCommand remote: remote_dev, command: "chmod +x /u/startup/scripts/start_dataprep.sh;/u/startup/scripts/start_dataprep.sh $BUILD_NUMBER ${registry}:$BUILD_NUMBER"
+     }
+
+     if ("${params.Deploy_On}" == "QA") {
+      sshPut remote: remote_qa, from: '/u/startup/scripts/start_dataprep.sh', into: '/u/startup/scripts'
+      sshCommand remote: remote_qa, command: "chmod +x /u/startup/scripts/start_dataprep.sh;/u/startup/scripts/start_dataprep.sh $BUILD_NUMBER ${registry}:$BUILD_NUMBER"
+     }
+    }
+   }
+  }
+ }
+}
