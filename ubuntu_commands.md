@@ -6,7 +6,11 @@ eg: <code> dpkg -S /bin/ls </code>
 Sample output:
   <code> coreutils: /bin/ls </code>
 
+<----------------Alpine Docker Commands----------------->
 
 #add package in alpine docker
 <code> apk update </code>
-<code> apk add --update docker </code>
+<code> apk add --update docker </code> 
+
+#install service command in alpine docker
+<code> apk add --update  openrc </code>
