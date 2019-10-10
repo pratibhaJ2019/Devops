@@ -9,8 +9,10 @@ Sample output:
 <----------------Alpine Docker Commands----------------->
 
 #add package in alpine docker
+
 <code> apk update </code>
 <code> apk add --update docker </code> 
 
 #install service command in alpine docker
+
 <code> apk add --update  openrc </code>
