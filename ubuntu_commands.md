@@ -4,5 +4,4 @@
 eg: <code> dpkg -S /bin/ls </code>
 
 Sample output:
-
-coreutils: /bin/ls
+  <code> coreutils: /bin/ls </code>
