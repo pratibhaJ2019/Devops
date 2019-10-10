@@ -8,5 +8,5 @@ Sample output:
 
 
 #add package in alpine docker
-
+<code> apk update </code>
 <code> apk add --update docker </code>
