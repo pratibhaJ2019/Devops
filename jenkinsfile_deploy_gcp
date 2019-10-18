@@ -1,0 +1,72 @@
+node {
+
+  //Define all variables
+  def project = 'amb-dev'
+  def appName = 'amb-dev-dataprep-api'
+  def namespace = 'dataprep-dev'
+//   def imageTag = "us.gcr.io/${project}/${appName}:${env.BUILD_NUMBER}" 
+  def imageTag = "us.gcr.io/${project}/${appName}:latest" 
+    
+    
+    def app
+        sh 'echo starting checkout'
+         
+        def scmVars = checkout([
+               $class : 'GitSCM',
+              branches : [[name: '*/master']],
+               doGenerateSubmoduleConfigurations: false,
+               extensions : [[$class: 'CleanBeforeCheckout']],
+               submoduleCfg : [],
+               userRemoteConfigs: [[credentialsId: 'datapre_api_id2', url: 'https://bitbucket.org/sparkcognition/dataprep_api.git']]
+    ])
+
+    stage('Configuring Image') {
+        
+        println scmVars.GIT_BRANCH
+        sh 'git status'
+        sh 'cp dataprep_api/local_settings.dev.py dataprep_api/local_settings.py'
+        sh 'chmod 777 entrypoint.sh'
+    }
+
+    stage('Build image') {
+        /* This builds the actual image */
+        sh 'echo Building Image'
+        app = docker.build("${imageTag}")        
+    }
+
+    // stage('Push image') {
+    //     sh 'echo Start pushing image to gcr'
+    //     docker.withRegistry('https://us.gcr.io', 'need_gcr_id') {            
+    //         app.push("${env.BUILD_NUMBER}")
+    //         //''app.push("latest")
+    //             echo "Trying to Push Docker Build to gcr"
+    //     }
+    // }
+    
+  stage('Push Image to Registry') {
+      sh("gcloud docker -- push ${imageTag}")
+      sh ("docker rmi ${imageTag}")
+  }
+
+//   stage('Deploy Application') {
+//         withCredentials([file(credentialsId: 'darwin-deploy', variable: 'GOOGLE_APPLICATION_CREDENTIALS_dev')]) {
+//             sh("gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS_dev}")
+//             sh("gcloud container clusters get-credentials dataprep-dev-1 --zone us-central1-a --project amb-dev")
+//             sh 'curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl'
+//             sh 'chmod +x kubectl && ./kubectl --namespace=dataprep-dev get deployment'
+//             sh("kubectl --namespace=${namespace} delete deployment dataprep-dev-api")
+//             sh("kubectl --namespace=${namespace} apply -f kubernetes/api-server.yaml")
+//             }
+//       }
+//   }  
+        
+        stage('Deploy at GCP') {
+                sh 'gcloud container clusters get-credentials dataprep-dev-1 --zone us-central1-a --project amb-dev'
+                sh 'curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl'
+                sh 'ls -l'
+                sh 'chmod +x kubectl && ./kubectl --namespace=dataprep-dev get deployment'
+                sh("./kubectl --namespace=${namespace} delete deployment dataprep-dev-api")
+                sh("./kubectl --namespace=${namespace} apply -f kubernetes/api-server.yaml")
+      }
+    
+}
