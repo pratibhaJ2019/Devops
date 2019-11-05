@@ -1,0 +1,43 @@
+node {
+
+def PRESTO_UDFS_PATH='/opt/presto/plugin/udfs/'
+def SSH_USER='airshad_sparkcognition_com'
+def PRESTO_SERVER_IP='23.251.150.85'
+def UDF_JAR_FILENAME='udfs-2.0.4-SNAPSHOT-sources.jar'
+
+    def scmVars = checkout([
+               $class : 'GitSCM',
+              branches : [[name: '*/presto-udfs']],
+               doGenerateSubmoduleConfigurations: false,
+               extensions : [[$class: 'CleanBeforeCheckout']],
+               submoduleCfg : [],
+               userRemoteConfigs: [[credentialsId: 'datapre_api_id2', url: 'https://bitbucket.org/sparkcognition/dataprep_api.git']]
+    ])
+
+    stage ('Build') {
+        sh 'cd presto-udfs && mvn source:jar'
+    }
+
+    stage ('Copy') {
+        sshagent (credentials: ['airshad_sparkcognition_com']) {
+            
+            sh "scp -r presto-udfs/target/udfs-2.0.4-SNAPSHOT-sources.jar ${SSH_USER}@${PRESTO_SERVER_IP}:."
+
+            sh"""ssh -o StrictHostKeyChecking=no ${SSH_USER}@${PRESTO_SERVER_IP} << EOF
+                if [ \$? -ne 0 ]; then
+                    echo \" Error while connecting SSH \"
+                    exit 1
+                fi  
+
+                sudo chown presto:presto ${UDF_JAR_FILENAME}
+                sudo mv ${UDF_JAR_FILENAME} ${PRESTO_UDFS_PATH}/
+                ls -lrt ${PRESTO_UDFS_PATH}/
+                exit
+                EOF
+            """
+
+            //# prestodb master server
+            // sh 'ssh -o StrictHostKeyChecking=no -l airshad_sparkcognition_com 34.66.246.69 sudo -i; sudo -u presto whoami'
+        }
+    }
+}
