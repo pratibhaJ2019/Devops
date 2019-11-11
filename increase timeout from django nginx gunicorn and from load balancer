@@ -1,0 +1,70 @@
+1) ##increase timeout from loadbalancer (url https://cloud.google.com/load-balancing/docs/backend-service#timeout-setting)
+
+To configure the timeout setting:
+
+    In the Google Cloud Platform Console, you can modify the timeout setting in the Backend configuration portion of the HTTP(S) load balancer page.
+    Go to the Load balancing page
+    Select the Edit pencil for your load balancer.
+    Select Backend configuration.
+    Select the Edit pencil for the Backend service.
+    On the line for Protocol, Port, and Timeout settings, select the Edit pencil.
+    Enter a new Timeout Setting in seconds.
+    Click the Update button for the Backend service.
+    Click the Update button for the load balancer.
+
+=======================================================================
+
+2) ##increase timeout in nginx config
+
+  server {
+    listen 8000;
+    server_name localhost;
+    access_log  /var/log/nginx/example.log;
+  location / {
+	proxy_http_version 1.1;
+	proxy_set_header Upgrade $http_upgrade;
+	proxy_set_header Connection "upgrade";
+	proxy_set_header Host $http_host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forward-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forward-Proto http;
+	proxy_set_header X-Nginx-Proxy true;
+	proxy_temp_file_write_size 64k;
+	proxy_connect_timeout 10080s;
+	proxy_send_timeout 10080;
+	proxy_read_timeout 10080;
+	proxy_buffer_size 64k;
+	proxy_buffers 16 32k;
+	proxy_busy_buffers_size 64k;
+	proxy_redirect off;
+	proxy_request_buffering off;
+	proxy_buffering off;
+    
+	#proxy_set_header Host $http_host;
+	#proxy_set_header X-Real-IP $remote_addr;
+	#proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	#proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_pass http://unix:/tmp/dataprep_api.sock;
+    
+    }
+    location /static {
+        autoindex on;
+        alias /code/static;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   html;
+    }
+  }
+----------------------------------------
+
+3) ##increase the timeout in gunicorn 
+
+gunicorn -t 300 --workers=3  --bind unix:/tmp/dataprep_api.sock dataprep_api.wsgi &
+
+
+
+
+
