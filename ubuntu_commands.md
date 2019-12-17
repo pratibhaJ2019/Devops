@@ -19,3 +19,8 @@ Sample output:
 <code> apk add --update  openrc </code>
 
 <----------------End of Alpine Docker Commands----------------->
+
+
+
+# subtract file1 from file2  
+grep -Fxvf /tmp/file2.txt /tmp/file1.txt
