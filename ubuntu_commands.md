@@ -22,5 +22,5 @@ Sample output:
 
 
 
-# subtract file1 from file2  
+#subtract file1 from file2  
 grep -Fxvf /tmp/file2.txt /tmp/file1.txt
