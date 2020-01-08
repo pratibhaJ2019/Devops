@@ -1,0 +1,29 @@
+
+
+#switch the namespace command
+
+# first get the current context
+ kubectl config view
+ kubectl config current-context
+
+#now switch to your own namespace
+ kubectl config set-context $(kubectl config current-context) --namespace=my-namespace
+
+
+# show pods with lables
+ kubectl get pods --show-lables
+
+
+ kubectl get rs
+ kubectl describe rs vote
+
+----------------------------------
+# resource limits
+https://medium.com/@betz.mark/understanding-resource-limits-in-kubernetes-cpu-time-9eff74d3161b
+
+#to check the pod limits
+kubectl get pods limit-test-5b4c495556-p2xkr -o=jsonpath='{.spec.containers[0].resources}'
+
+#We can also see that docker configured the container with the same limit:
+docker inspect f2321226620e --format '{{.HostConfig.CpuShares}}'
+51
