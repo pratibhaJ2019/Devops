@@ -1,0 +1,19 @@
+#!/bin/bash
+
+FILE_CHANGED=`/usr/bin/find /opt/* -cmin -5`
+FIVE_MIN=`/usr/bin/find /opt/* -cmin -5|wc -l`
+
+if [ $FIVE_MIN -eq 1 ]
+
+then
+	echo Hi file has been changed.
+	echo $FILE_CHANGED
+	bash +x /opt/script.sh
+
+else
+
+	echo  "Ip not added for last 5 minutes" >  /dev/null
+
+fi
+
+exit
